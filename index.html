@@ -1484,6 +1484,7 @@ function restoreFromFile(evt){
 //  5. Collez le Client ID ci-dessous
 //
 const GOOGLE_CLIENT_ID = '789905369520-h2qekj52vovd1sfrlci778vrjj8vugfi.apps.googleusercontent.com';
+const REDIRECT_URI = 'https://doubigue.github.io/';
 const DRIVE_FILE_NAME  = 'luna_backup.json';
 const DRIVE_SCOPE      = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/gmail.send';
 
@@ -1509,7 +1510,7 @@ async function driveSignIn(){
 
   const params = new URLSearchParams({
     client_id:             GOOGLE_CLIENT_ID,
-    redirect_uri:          window.location.origin + window.location.pathname,
+    redirect_uri:          REDIRECT_URI,
     response_type:         'code',
     scope:                 DRIVE_SCOPE,
     code_challenge:        challenge,
@@ -1562,7 +1563,7 @@ async function _exchangeCode(code){
     body: new URLSearchParams({
       code,
       client_id:     GOOGLE_CLIENT_ID,
-      redirect_uri:  window.location.origin + window.location.pathname,
+      redirect_uri:  REDIRECT_URI,
       grant_type:    'authorization_code',
       code_verifier: verifier
     })
