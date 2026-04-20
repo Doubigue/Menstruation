@@ -495,7 +495,72 @@ body{
 .cycles-print-table tr.current-cycle td{color:var(--text)}
 .cpt-dot{width:6px;height:6px;border-radius:1px;display:inline-block;margin-right:4px;vertical-align:middle}
 
-/* ── @media print ── */
+/* ── Bouton Fermer amélioré ── */
+.close-btn{
+  position:absolute;right:16px;top:16px;
+  width:34px;height:34px;border-radius:50%;
+  background:rgba(255,255,255,.06);
+  border:1px solid var(--border2);
+  color:var(--text2);font-size:14px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;z-index:10;flex-shrink:0;
+}
+.close-btn:hover{background:rgba(192,40,64,.18);border-color:var(--bord2);color:var(--bord3);transform:rotate(90deg)}
+
+/* ── Anneau de cycle animé ── */
+.cycle-ring-wrap{
+  display:flex;justify-content:center;align-items:center;
+  padding:18px 0 10px;position:relative;
+}
+.cycle-ring-svg{transform:rotate(-90deg)}
+.cycle-ring-bg{fill:none;stroke:rgba(255,255,255,.05);stroke-width:6}
+.cycle-ring-fill{fill:none;stroke-width:6;stroke-linecap:round;transition:stroke-dashoffset .8s cubic-bezier(.4,0,.2,1)}
+.cycle-ring-center{
+  position:absolute;text-align:center;
+  font-family:'Playfair Display',serif;
+}
+.cycle-ring-day{font-size:32px;color:var(--gold2);line-height:1}
+.cycle-ring-label{font-size:10px;color:var(--text3);letter-spacing:.1em;text-transform:uppercase;margin-top:3px}
+
+/* ── Mode discret (privacy screen) ── */
+body.private-mode .content,
+body.private-mode .status-main,
+body.private-mode .status-sub,
+body.private-mode .info-card-value,
+body.private-mode .fertil-val,
+body.private-mode .cycle-dates{
+  filter:blur(6px);
+  transition:filter .3s;
+}
+body.private-mode .content:active,
+body.private-mode .content:focus-within{
+  filter:none;
+}
+.privacy-btn{
+  background:transparent;border:1px solid var(--border);
+  padding:5px 9px;font-size:9.5px;color:var(--text3);
+  letter-spacing:.1em;text-transform:uppercase;
+  cursor:pointer;transition:all .2s;font-family:'Jost',sans-serif;font-weight:600;
+  display:flex;align-items:center;gap:4px;
+}
+.privacy-btn:hover,.privacy-btn.active{background:rgba(192,40,64,.1);color:var(--bord3);border-color:rgba(192,40,64,.3)}
+
+/* ── Compteur jours animé ── */
+@keyframes countUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.animated-number{animation:countUp .5s ease both}
+
+/* ── Rappel banner ── */
+.notif-banner{
+  background:rgba(201,168,76,.06);border:1px solid rgba(201,168,76,.2);
+  border-left:2px solid var(--gold);
+  padding:11px 14px;margin-bottom:10px;margin-top:10px;
+  display:flex;align-items:center;gap:10px;font-size:11.5px;
+  animation:fadeUp .4s ease both;
+}
+.notif-banner-icon{font-size:18px;flex-shrink:0}
+.notif-banner-text{flex:1;line-height:1.5;color:var(--text2)}
+.notif-banner-close{background:transparent;border:none;color:var(--text3);cursor:pointer;font-size:13px;padding:2px 5px;flex-shrink:0}
+.notif-banner-close:hover{color:var(--text2)}
 @media print{
   html,body{overflow:visible!important;height:auto!important;background:#fff!important;color:#111!important}
   .orbs,.bottom-nav,.header,.toast,#settingsOverlay,#printOverlay,#app,#backupOverlay{display:none!important}
@@ -542,7 +607,8 @@ body{
     <div class="header-actions">
       <button class="print-btn" onclick="openBackup()">☁️ Sauvegarder</button>
       <button class="print-btn" onclick="openPrint()">🖨️ Imprimer</button>
-      <button class="settings-btn" onclick="openSettings()">⚙️ Paramètres</button>
+      <button class="privacy-btn" id="privacyBtn" onclick="togglePrivacy()" title="Mode discret">👁</button>
+      <button class="settings-btn" onclick="openSettings()">⚙️</button>
     </div>
   </div>
 
@@ -570,7 +636,7 @@ body{
 <div class="overlay" id="settingsOverlay" onclick="closeSettingsOutside(event)">
   <div class="sheet" style="position:relative">
     <div class="sheet-handle"></div>
-    <button class="btn-close" onclick="closeSettings()">✕</button>
+    <button class="close-btn" onclick="closeSettings()" title="Fermer">✕</button>
     <div class="sheet-title">Mes paramètres</div>
 
     <div class="form-group">
@@ -592,19 +658,26 @@ body{
     </div>
 
     <div class="form-group">
+      <label class="form-label">Adresse e-mail (optionnel)</label>
+      <input class="form-input" type="email" id="inputEmail" placeholder="exemple@gmail.com">
+      <div class="form-hint">Pour envoyer le récapitulatif par e-mail.</div>
+    </div>
+
+    <div class="form-group">
       <label class="form-label">Numéro WhatsApp (optionnel)</label>
       <input class="form-input" type="tel" id="inputWhatsapp" placeholder="33612345678">
       <div class="form-hint">Indicatif pays sans « + » · ex : 33612345678 pour un numéro français. Permet d'envoyer le récapitulatif via WhatsApp.</div>
     </div>
 
     <button class="btn-save" onclick="saveSettings()">💾 Enregistrer</button>
+    <button class="btn-save" onclick="requestNotifPermission();toast('🔔 Rappels activés !')" style="margin-top:6px;border-color:rgba(201,168,76,.3);font-size:9.5px">🔔 Activer les rappels</button>
   </div>
 </div>
 
 <!-- Backup overlay -->
 <div id="backupOverlay" onclick="closeBackupOutside(event)">
   <div class="backup-modal">
-    <button class="print-close" style="position:absolute;right:18px;top:18px" onclick="closeBackup()">✕</button>
+    <button class="close-btn" onclick="closeBackup()" title="Fermer">✕</button>
     <div class="backup-modal-title">☁️ Sauvegardes</div>
     <div class="backup-subtitle">Exportez, synchronisez ou restaurez vos données Luna</div>
 
@@ -623,6 +696,10 @@ body{
     <div class="bk-section">
       <div class="bk-section-title">🌐 Google Drive</div>
       <div id="driveStatusBar" style="font-size:11px;color:var(--text3);margin-bottom:10px;padding:0 2px"></div>
+      <div style="font-size:9.5px;color:var(--text3);margin-bottom:9px;padding:7px 10px;background:rgba(255,255,255,.03);border:1px solid var(--border)">
+        🔑 URI de redirection autorisée :<br>
+        <span id="driveRedirectUri" style="color:var(--gold);word-break:break-all;font-size:9px"></span>
+      </div>
       <button class="bk-btn drive" onclick="backupToDrive()">
         <span class="bk-icon">📤</span>
         <span class="bk-label">Sauvegarder sur Drive
@@ -665,12 +742,15 @@ body{
   <div class="print-modal" id="printModalInner">
     <div class="print-modal-header">
       <div class="print-modal-title">🖨️ Tableau récapitulatif</div>
-      <button class="print-close" onclick="closePrint()">✕</button>
+      <button class="close-btn" style="position:static;margin-left:auto" onclick="closePrint()" title="Fermer">✕</button>
     </div>
     <div id="printModalContent"><!-- injecté --></div>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button class="btn-print-action" onclick="doPrint()" style="flex:1">🖨️ Imprimer / PDF</button>
-      <button class="btn-print-action btn-wa" id="btnWhatsapp" onclick="sendWhatsApp()" style="flex:1;border-color:rgba(37,211,102,.5);color:#25d366">
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+      <button class="btn-print-action" onclick="doPrint()" style="flex:1;min-width:120px">📄 Sauvegarder en PDF</button>
+      <button class="btn-print-action" id="btnEmail" onclick="sendEmail()" style="flex:1;min-width:120px;border-color:rgba(66,133,244,.5);color:#6ab0ff">
+        ✉️ Envoyer par mail
+      </button>
+      <button class="btn-print-action btn-wa" id="btnWhatsapp" onclick="sendWhatsApp()" style="flex:1;min-width:120px;border-color:rgba(37,211,102,.5);color:#25d366">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.124.558 4.121 1.533 5.857L0 24l6.335-1.509A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.794 9.794 0 01-5.013-1.378l-.36-.214-3.724.887.926-3.617-.235-.372A9.785 9.785 0 012.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/></svg>
         WhatsApp
       </button>
@@ -691,8 +771,9 @@ const STORAGE_KEY = 'luna_cycle_v1';
 let state = {
   cycleLen: 28,
   periodLen: 5,
-  lastPeriod: null, // 'YYYY-MM-DD'
-  whatsapp: '',     // numéro avec indicatif, ex: 33612345678
+  lastPeriod: null,
+  whatsapp: '',
+  email: '',
 };
 
 let calViewDate = new Date(); // mois affiché dans le calendrier
@@ -893,25 +974,65 @@ function renderHome(cycles){
   const cycleDay = cur ? diffDays(cur.periodStart, todayD) + 1 : '–';
   const daysToNext = nextCycle ? diffDays(todayD, nextCycle.periodStart) : '–';
 
+  // Anneau de progression
+  const ringPct = cur ? Math.min((typeof cycleDay==='number'?cycleDay:1) / state.cycleLen, 1) : 0;
+  const R = 52, CIRC = 2 * Math.PI * R;
+  const ringColor = st.phase==='Règles'?'var(--bord2)':st.phase==='Ovulation'?'var(--gold2)':st.phase==='Fenêtre fertile'?'#b080ff':'var(--teal)';
+  const dashOffset = CIRC * (1 - ringPct);
+
+  // Bannière de rappel contextuelle
+  let bannerHtml = '';
+  if(cur){
+    const daysToFertile = diffDays(todayD, cur.fertileStart);
+    const daysToOvul    = diffDays(todayD, cur.ovulDay);
+    const daysToMenses  = nextCycle ? diffDays(todayD, nextCycle.periodStart) : null;
+    if(daysToFertile === 2){
+      bannerHtml = `<div class="notif-banner"><span class="notif-banner-icon">🌸</span><span class="notif-banner-text">Votre fenêtre fertile commence dans <strong>2 jours</strong>.</span><button class="notif-banner-close" onclick="this.parentElement.remove()">✕</button></div>`;
+    } else if(daysToOvul === 1){
+      bannerHtml = `<div class="notif-banner" style="border-left-color:var(--gold)"><span class="notif-banner-icon">⭐</span><span class="notif-banner-text">Ovulation <strong>demain</strong> — fertilité maximale.</span><button class="notif-banner-close" onclick="this.parentElement.remove()">✕</button></div>`;
+    } else if(daysToMenses !== null && daysToMenses === 3){
+      bannerHtml = `<div class="notif-banner" style="border-left-color:var(--bord2);background:rgba(139,26,46,.06)"><span class="notif-banner-icon">🔴</span><span class="notif-banner-text">Vos prochaines règles arrivent dans <strong>3 jours</strong>.</span><button class="notif-banner-close" onclick="this.parentElement.remove()">✕</button></div>`;
+    }
+  }
+
   return `
+  ${bannerHtml}
   <div class="status-card">
-    <div class="status-phase">${st.emoji} ${st.phase}</div>
-    <div class="status-main" style="color:${st.color||'var(--text)'}">${st.main}</div>
-    <div class="status-sub">${st.sub}</div>
-    <div class="status-dots">${dots}</div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <div class="cycle-ring-wrap" style="padding:0;flex-shrink:0">
+        <svg class="cycle-ring-svg" width="70" height="70" viewBox="0 0 120 120">
+          <circle class="cycle-ring-bg" cx="60" cy="60" r="${R}"/>
+          <circle class="cycle-ring-fill" cx="60" cy="60" r="${R}"
+            stroke="${ringColor}"
+            stroke-dasharray="${CIRC.toFixed(1)}"
+            stroke-dashoffset="${dashOffset.toFixed(1)}"
+            style="transition:stroke-dashoffset .9s cubic-bezier(.4,0,.2,1)"/>
+        </svg>
+        <div class="cycle-ring-center">
+          <div class="cycle-ring-day animated-number">${typeof cycleDay==='number'?cycleDay:'–'}</div>
+          <div class="cycle-ring-label">J</div>
+        </div>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="status-phase">${st.emoji} ${st.phase}</div>
+        <div class="status-main" style="color:${st.color||'var(--text)'};font-size:20px">${st.main}</div>
+        <div class="status-sub">${st.sub}</div>
+      </div>
+    </div>
+    <div class="status-dots" style="margin-top:14px">${dots}</div>
   </div>
 
   <div class="cards-grid">
     <div class="info-card">
       <div class="info-card-icon">📆</div>
       <div class="info-card-label">Jour du cycle</div>
-      <div class="info-card-value" style="color:var(--rose2)">${cycleDay}</div>
+      <div class="info-card-value animated-number" style="color:var(--bord2)">${cycleDay}</div>
       <div class="info-card-sub">sur ${state.cycleLen} jours</div>
     </div>
     <div class="info-card">
       <div class="info-card-icon">⏳</div>
       <div class="info-card-label">Prochaines règles</div>
-      <div class="info-card-value" style="color:var(--violet2)">${typeof daysToNext==='number'?daysToNext:'–'}</div>
+      <div class="info-card-value animated-number" style="color:#b080ff">${typeof daysToNext==='number'?daysToNext:'–'}</div>
       <div class="info-card-sub">${nextCycle?'j · '+fmtDate(nextCycle.periodStart):''}</div>
     </div>
   </div>
@@ -1107,13 +1228,62 @@ function renderCyclesList(cycles){
 }
 
 // ═══════════════════════════════════════════════
-//  SETTINGS
+//  MODE DISCRET
 // ═══════════════════════════════════════════════
+function togglePrivacy(){
+  const btn = document.getElementById('privacyBtn');
+  document.body.classList.toggle('private-mode');
+  const on = document.body.classList.contains('private-mode');
+  btn.textContent = on ? '🙈' : '👁';
+  btn.classList.toggle('active', on);
+  toast(on ? '🙈 Mode discret activé' : '👁 Mode discret désactivé');
+}
+
+// ═══════════════════════════════════════════════
+//  NOTIFICATIONS NAVIGATEUR
+// ═══════════════════════════════════════════════
+function requestNotifPermission(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission === 'default'){
+    Notification.requestPermission().then(p=>{
+      if(p==='granted') scheduleNotifications();
+    });
+  } else if(Notification.permission === 'granted'){
+    scheduleNotifications();
+  }
+}
+
+function scheduleNotifications(){
+  if(!state.lastPeriod) return;
+  const cycles = getCycles();
+  const todayD = new Date(); todayD.setHours(0,0,0,0);
+  const cur = getCurrentCycle(cycles);
+  const nextC = cycles.find(c=>c.periodStart > todayD);
+  if(!cur) return;
+
+  const events = [
+    { date: cur.fertileStart,     msg: '🌸 Votre fenêtre fertile commence aujourd\'hui !' },
+    { date: cur.ovulDay,          msg: '⭐ Jour d\'ovulation — fertilité maximale !' },
+    { date: nextC?.periodStart,   msg: '🔴 Vos règles arrivent aujourd\'hui.' },
+  ].filter(e => e.date && e.date >= todayD);
+
+  events.forEach(ev => {
+    const ms = ev.date.getTime() - Date.now();
+    if(ms > 0 && ms < 7 * 24 * 3600 * 1000){
+      setTimeout(()=>{
+        if(document.visibilityState !== 'visible'){
+          new Notification('🌙 Luna', { body: ev.msg, icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌙</text></svg>" });
+        }
+      }, ms);
+    }
+  });
+}
 function openSettings(){
   document.getElementById('inputCycleLen').value  = state.cycleLen  || 28;
   document.getElementById('inputPeriodLen').value = state.periodLen || 5;
   document.getElementById('inputLastPeriod').value= state.lastPeriod|| '';
   document.getElementById('inputWhatsapp').value  = state.whatsapp  || '';
+  document.getElementById('inputEmail').value     = state.email     || '';
   document.getElementById('settingsOverlay').classList.add('open');
 }
 function closeSettings(){ document.getElementById('settingsOverlay').classList.remove('open'); }
@@ -1124,16 +1294,19 @@ function saveSettings(){
   const pl = parseInt(document.getElementById('inputPeriodLen').value) || 5;
   const lp = document.getElementById('inputLastPeriod').value;
   const wa = document.getElementById('inputWhatsapp').value.trim().replace(/\D/g,'');
+  const em = document.getElementById('inputEmail').value.trim();
 
   if(cl<18||cl>60){ toast('⚠️ Durée de cycle invalide (18–60 jours)'); return; }
   if(pl<1||pl>14) { toast('⚠️ Durée des règles invalide (1–14 jours)'); return; }
   if(!lp)         { toast('⚠️ Entrez la date de vos dernières règles'); return; }
   if(wa && wa.length < 8){ toast('⚠️ Numéro WhatsApp invalide'); return; }
+  if(em && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)){ toast('⚠️ Adresse e-mail invalide'); return; }
 
   state.cycleLen  = cl;
   state.periodLen = pl;
   state.lastPeriod= lp;
   state.whatsapp  = wa;
+  state.email     = em;
   save();
   closeSettings();
   render();
@@ -1181,6 +1354,8 @@ function openBackup(){
   setBkStatus('','');
   document.getElementById('backupOverlay').classList.add('open');
   updateDriveStatus();
+  const uriEl = document.getElementById('driveRedirectUri');
+  if(uriEl) uriEl.textContent = window.location.origin + window.location.pathname;
 }
 function closeBackup(){ document.getElementById('backupOverlay').classList.remove('open'); }
 function closeBackupOutside(e){ if(e.target===document.getElementById('backupOverlay')) closeBackup(); }
@@ -1252,7 +1427,7 @@ function restoreFromFile(evt){
 //     ex : https://votrenom.github.io
 //  5. Collez le Client ID ci-dessous
 //
-const GOOGLE_CLIENT_ID = '770900621447-dbrgcirtnu17aeq6fl63tc2blivaomr7.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '728896865181-erd7b50dbrvpfs0dj5sqp6kvs3pjb8ef.apps.googleusercontent.com';
 const DRIVE_FILE_NAME  = 'luna_backup.json';
 const DRIVE_SCOPE      = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file';
 
@@ -1499,14 +1674,25 @@ function openPrint(){
   } else {
     btnWa.style.display = 'none';
   }
+  // Afficher/masquer bouton Email
+  const btnMail = document.getElementById('btnEmail');
+  if(btnMail){
+    btnMail.style.display = 'flex';
+    btnMail.title = state.email ? 'Envoyer à ' + state.email : 'Envoyer par e-mail';
+  }
   document.getElementById('printOverlay').classList.add('open');
 }
 function closePrint(){ document.getElementById('printOverlay').classList.remove('open'); }
 function closePrintOutside(e){ if(e.target===document.getElementById('printOverlay')) closePrint(); }
 
 function doPrint(){
+  // Indiquer à l'utilisateur de choisir "Enregistrer en PDF" dans le dialogue
+  document.getElementById('printPage').dataset.hint = '1';
   closePrint();
-  setTimeout(()=>{ window.print(); }, 150);
+  setTimeout(()=>{
+    // Conseille l'imprimante PDF si possible
+    window.print();
+  }, 200);
 }
 
 // ── WhatsApp ──
@@ -1540,7 +1726,78 @@ function buildWhatsAppText(cycles){
   return lines.filter(l => l !== null && l !== undefined).join('\n');
 }
 
-function sendWhatsApp(){
+// ── E-mail ──
+function sendEmail(){
+  const cycles = getCycles();
+  if(!cycles.length){ toast('⚠️ Aucune donnée à envoyer'); return; }
+
+  // Construire le corps du mail en texte brut (même contenu que WhatsApp)
+  const todayD = new Date(); todayD.setHours(0,0,0,0);
+  const cur = getCurrentCycle(cycles);
+  const st  = cur ? getTodayStatus(cycles) : null;
+  const nextCycle = cycles.find(c=>c.periodStart > todayD);
+  const cycleDay  = cur ? diffDays(cur.periodStart, todayD) + 1 : '–';
+  const daysToNext= nextCycle ? diffDays(todayD, nextCycle.periodStart) : '–';
+
+  const dateStr2 = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const upcoming = cycles.filter(c => c.cycleEnd >= todayD).slice(0,6);
+
+  let body = `🌙 Luna — Récapitulatif de cycle\n`;
+  body += `📅 ${dateStr2}\n\n`;
+  body += `Phase actuelle : ${st ? st.emoji + ' ' + st.phase : '–'}\n`;
+  body += `Jour du cycle  : ${cycleDay} / ${state.cycleLen}\n`;
+  if(cur){
+    body += `Fenêtre fertile : ${fmtDateShort(cur.fertileStart)} → ${fmtDateShort(cur.fertileEnd)}\n`;
+    body += `Ovulation estimée : ${fmtDateFull(cur.ovulDay)}\n`;
+  }
+  if(nextCycle){
+    body += `Prochaines règles : ${fmtDateFull(nextCycle.periodStart)} (dans ${daysToNext} j)\n`;
+  }
+  body += `\n──────────────────────────\n`;
+  body += `Prochains cycles :\n\n`;
+  upcoming.forEach(c => {
+    const tag = c === cur ? ' ← actuel' : '';
+    body += `Cycle ${c.num}${tag}\n`;
+    body += `  Règles   : ${fmtDateShort(c.periodStart)} → ${fmtDateShort(c.periodEnd)}\n`;
+    body += `  Fertile  : ${fmtDateShort(c.fertileStart)} → ${fmtDateShort(c.fertileEnd)}\n`;
+    body += `  Ovulation: ${fmtDateShort(c.ovulDay)}\n\n`;
+  });
+  body += `──────────────────────────\n`;
+  body += `Généré par Luna · Suivi de cycle féminin\n`;
+  body += `Ces données sont des estimations. Consultez un professionnel de santé pour tout suivi médical.\n`;
+
+  const subject = `🌙 Luna — Récapitulatif cycle · ${new Date().toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})}`;
+  const dest = state.email || '';
+
+  // Étape 1 : télécharger le PDF (via print vers PDF)
+  // On génère d'abord un lien HTML standalone téléchargeable
+  const printHtml = document.getElementById('printPage').innerHTML;
+  if(printHtml){
+    const fullHtml = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+body{font-family:'Jost',sans-serif;color:#181818;margin:0;padding:0}
+${document.querySelector('style').textContent.split('@media print')[0]}
+</style></head><body>${printHtml}</body></html>`;
+
+    const blob = new Blob([fullHtml], {type:'text/html'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const dateFile = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = `luna_recap_${dateFile}.html`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Étape 2 : ouvrir le client mail avec le corps pré-rempli
+  setTimeout(()=>{
+    const mailtoUrl = `mailto:${encodeURIComponent(dest)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoUrl;
+    closePrint();
+    toast('✉️ Client mail ouvert !');
+  }, 600);
+}
   if(!state.whatsapp){ toast('⚠️ Ajoutez votre numéro WhatsApp dans Paramètres'); return; }
   const cycles = getCycles();
   if(!cycles.length){ toast('⚠️ Aucune donnée à envoyer'); return; }
@@ -1730,6 +1987,50 @@ function buildPrintPage(cycles){
 // ═══════════════════════════════════════════════
 load();
 render();
+// Demande permission notifications après 3s (non bloquant)
+setTimeout(requestNotifPermission, 3000);
+
+// Auto-reconnexion silencieuse à Google Drive au démarrage
+(async function autoReconnectDrive(){
+  const rt = localStorage.getItem('luna_drive_rt');
+  if(!rt) return;
+  try {
+    const res = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {'Content-Type':'application/x-www-form-urlencoded'},
+      body: new URLSearchParams({
+        client_id:     GOOGLE_CLIENT_ID,
+        grant_type:    'refresh_token',
+        refresh_token: rt
+      })
+    });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error);
+    _driveToken      = data.access_token;
+    _driveTokenExpiry= Date.now() + (data.expires_in - 60) * 1000;
+    updateDriveStatus();
+    if(state.lastPeriod) setTimeout(_silentBackupToDrive, 2500);
+  } catch(e){
+    localStorage.removeItem('luna_drive_rt');
+    _driveToken = null;
+  }
+})();
+
+async function _silentBackupToDrive(){
+  if(!_driveToken || Date.now() >= _driveTokenExpiry) return;
+  try {
+    const payload  = getBackupPayload();
+    const existing = await _findDriveFile(DRIVE_FILE_NAME);
+    if(existing){
+      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existing.id}?uploadType=media`, {
+        method:  'PATCH',
+        headers: { Authorization: 'Bearer ' + _driveToken, 'Content-Type': 'application/json' },
+        body:    payload
+      });
+      toast('☁️ Sync Drive automatique');
+    }
+  } catch(e){ /* silencieux */ }
+}
 </script>
 </body>
 </html>
